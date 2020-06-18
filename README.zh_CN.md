@@ -1,24 +1,24 @@
 # Rasa-UI
-A simple Rasa UI implemented with [Bootstrap 3](https://getbootstrap.com/docs/3.3/)
+A simple Rasa UI
 
 ![a.gif](https://i.loli.net/2020/06/18/KEG1atwnScQFIgV.gif)
 
 # README.md
-[简体中文](README.zh_CN.md)
+[English](README.md)
 
-# Usage
-1. Init Rasa
+# 使用方法
+1. 初始化Rasa
 ```bash
 rasa init
 ```
-2. Run Rasa API (Allow cross-domain)
+2. 启动Rasa API（允许跨域）
 ```bash
 rasa run --enable-api --cors "*"
 ```
-3. Directly open `index.html`
+3. 直接打开页面`index.html`
 
-# PS
-utter_greet in domain.yml can change to it for buttons:
+# 备注
+domain.yml中的utter_greet可改成如下实现选择
 ```yaml
 responses:
   utter_greet:

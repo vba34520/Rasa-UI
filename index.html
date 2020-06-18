@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Rasa聊天机器人</title>
+    <script src="https://cdn.bootcss.com/jquery/3.0.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="comm.js"></script>
+    <style>
+        body {
+            margin: 1%;
+            overflow: hidden;
+        }
+
+        @media screen and (min-height: 900px) {
+            #box {
+                height: 900px;
+            }
+
+            #dialog {
+                height: calc(65%);
+                overflow: auto;
+            }
+        }
+
+        .choice {
+            margin: 0 0 10px;
+        }
+
+        .img-rounded {
+            height: 100px;
+            margin: 0 0 10px;
+        }
+    </style>
+</head>
+<body>
+<div id="box">
+    <div class="page-header">
+        <h1>Rasa聊天机器人</h1>
+    </div>
+    <div class="form-group">
+        <label for="conversation_id">conversation_id</label>
+        <input type="text" class="form-control" id="conversation_id">
+    </div>
+    <div class="form-group">
+        <label for="text">输入文本</label>
+        <input type="text" class="form-control" id="text" value="hi">
+    </div>
+    <div class="form-group">
+        <button type="submit" id="send" class="btn btn-default">
+            <span class="glyphicon glyphicon-send"></span> 发送
+        </button>
+    </div>
+    <div id="dialog" class="well well-sm"></div>
+</div>
+</body>
+</html>
