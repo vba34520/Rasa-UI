@@ -3,6 +3,7 @@ var messages_url;  // 发送消息
 var predict_url;  // 预测下一步动作
 var execute_url;  // 执行动作
 var action = "action_listen";  // 动作初始化为等待输入
+var default_actions = ["action_listen", "action_default_fallback", "action_restart"];  // 跳过的默认动作
 
 /*全局函数*/
 $(function () {
@@ -35,23 +36,40 @@ function send() {
         $("#text").focus();  // 设置焦点
         $("#dialog").append("<p>Your input ->  <b>" + text + "</b></p>");  // 页面添加输入文本
         messages(text);  // 发送消息
+        // tracker();  // 查看当前状态
     }
+}
+
+/*当前状态*/
+function tracker() {
+    var tracker_url = url + conversation_id + "/tracker";
+    $.ajax({
+        type: "GET",
+        url: tracker_url,
+        dataType: "json",
+        async: false,
+        success: function (response) {
+            console.log(response)
+        }
+    });
 }
 
 /*发送消息*/
 function messages(text) {
     $("#send").attr("disabled", true);  // 按钮设为不可用
     $(".choice").attr("disabled", true);  // 按钮设为不可用
+    text = text.replaceAll("'", '"');  // 单引号替换为双引号
     console.log('发送消息', text);
     $.ajax({
         type: "POST",
         url: messages_url,
         data: JSON.stringify({"text": text, "sender": "user"}), //需要转成JSON字符串
         dataType: "json",
+        async: false,
         success: function () {
             while (true) {
-                if (action === "action_listen" && $("#send").attr("disabled") === undefined) {
-                    break;  // 动作不是等待输入的话一直预测并执行动作
+                if (default_actions.indexOf(action) > -1 && $("#send").attr("disabled") === undefined) {
+                    break;  // 不是默认动作的话一直预测并执行动作
                 }
                 predict();  // 循环的内容需要同步
             }
@@ -69,7 +87,7 @@ function predict() {
         success: function (response) {
             action = response["scores"][0]["action"];  // 取置信度最高的动作
             console.log(action);
-            if (action === "action_listen") {
+            if (default_actions.indexOf(action) > -1) {
                 $("#send").attr("disabled", false);  // 按钮设为可用
             }
             execute();
@@ -84,6 +102,7 @@ function execute() {
         url: execute_url,
         data: JSON.stringify({"name": action}),
         dataType: "json",
+        async: false,
         success: function (response) {
             var messages = response["messages"];
             if (messages.length !== 0) {
@@ -96,14 +115,14 @@ function execute() {
                 }
                 if ("image" in messages[i]) {
                     var image = messages[i]["image"];
-                    // $("#dialog").append("<p><a href=" + image + ">" + image + "</a></p>");
                     $("#dialog").append('<a href="' + image + '"><img src="' + image + '" class="img-rounded"></a>');
                 }
                 if ("buttons" in messages[i]) {
                     var buttons = messages[i]["buttons"];
                     for (j in buttons) {
                         var payload = buttons[j]["payload"];
-                        $("#dialog").append('<button type="submit" class="btn btn-default btn-sm choice" value="' + payload + '">' + buttons[j]["title"] + '</button>' + "&nbsp;&nbsp;");
+                        var html = '<button type="submit" class="btn btn-default btn-sm choice" value="{0}">{1}</button>&nbsp;&nbsp;'.format(payload, buttons[j]["title"])
+                        $("#dialog").append(html);
                     }
                     choose();  // 选择事件
                 }
@@ -116,8 +135,6 @@ function execute() {
 /*选择事件*/
 function choose() {
     $(".choice").on("click", function () {
-        // $("#send").attr("disabled", true);  // 按钮设为不可用
-        // $(".choice").attr("disabled", true);  // 按钮设为不可用
         var payload = $(this).val();  // 真实数据
         var text = $(this).text();  // 呈现数据
         if (payload === "") {
@@ -137,3 +154,24 @@ function uuid() {
 
     return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
 }
+
+/*字符串占位符*/
+String.prototype.format = function () {
+    if (arguments.length == 0) return this;
+    var param = arguments[0];
+    var s = this;
+    if (typeof (param) == 'object') {
+        for (var key in param)
+            s = s.replace(new RegExp("\\{" + key + "\\}", "g"), param[key]);
+        return s;
+    } else {
+        for (var i = 0; i < arguments.length; i++)
+            s = s.replace(new RegExp("\\{" + i + "\\}", "g"), arguments[i]);
+        return s;
+    }
+};
+
+/*字符串replaceAll*/
+String.prototype.replaceAll = function (s1, s2) {
+    return this.replace(new RegExp(s1, "gm"), s2);
+};
