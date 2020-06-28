@@ -121,7 +121,7 @@ function execute() {
                     var buttons = messages[i]["buttons"];
                     for (j in buttons) {
                         var payload = buttons[j]["payload"];
-                        var html = '<button type="submit" class="btn btn-default btn-sm choice" value="{0}">{1}</button>&nbsp;&nbsp;'.format(payload, buttons[j]["title"])
+                        var html = '<button type="submit" class="btn btn-default btn-sm choice" value=\'{0}\'>{1}</button>&nbsp;&nbsp;'.format(payload, buttons[j]["title"]);
                         $("#dialog").append(html);
                     }
                     choose();  // 选择事件
