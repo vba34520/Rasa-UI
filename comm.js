@@ -1,18 +1,10 @@
-var url = "http://localhost:5005/conversations/";  // Rasa API
-var messages_url;  // 发送消息
-var predict_url;  // 预测下一步动作
-var execute_url;  // 执行动作
-var action = "action_listen";  // 动作初始化为等待输入
-var default_actions = ["action_listen", "action_default_fallback", "action_restart"];  // 跳过的默认动作
+var url = "http://localhost:5005/webhooks/rest/webhook";
 
 /*全局函数*/
 $(function () {
     // 初始化
-    var conversation_id = uuid();  // 随机生成uuid作为conversation_id
-    $("#conversation_id").val(conversation_id);
-    messages_url = url + conversation_id + "/messages";  // 发送消息
-    predict_url = url + conversation_id + "/predict";  // 预测下一步动作
-    execute_url = url + conversation_id + "/execute";  // 执行动作
+    var sender = uuid();  // 随机生成uuid作为conversation_id
+    $("#sender").val(sender);
     // 发送事件
     send();
 });
@@ -23,7 +15,7 @@ function send() {
     $("#send").on("click", function () {
         f();
     });
-    $("#text").on("keydown", function (event) {
+    $("#message").on("keydown", function (event) {
         var keyCode = event.keyCode || event.which;
         if (keyCode == "13") {//回车
             f();
@@ -31,94 +23,41 @@ function send() {
     });
 
     function f() {
-        var text = $("#text").val();  // 获取输入文本
-        $("#text").val("");  // 重置为空
-        $("#text").focus();  // 设置焦点
-        $("#dialog").append("<p>Your input ->  <b>" + text + "</b></p>");  // 页面添加输入文本
-        messages(text);  // 发送消息
-        // tracker();  // 查看当前状态
+        var message = $("#message").val();  // 获取输入文本
+        $("#message").val("");  // 重置为空
+        $("#message").focus();  // 设置焦点
+        $("#dialog").append("<p>Your input ->  <b>" + message + "</b></p>");  // 页面添加输入文本
+        messages(message);  // 发送消息
     }
 }
 
-/*当前状态*/
-function tracker() {
-    var tracker_url = url + conversation_id + "/tracker";
-    $.ajax({
-        type: "GET",
-        url: tracker_url,
-        dataType: "json",
-        async: false,
-        success: function (response) {
-            console.log(response)
-        }
-    });
-}
-
 /*发送消息*/
-function messages(text) {
+function messages(message) {
     $("#send").attr("disabled", true);  // 按钮设为不可用
     $(".choice").attr("disabled", true);  // 按钮设为不可用
-    text = text.replaceAll("'", '"');  // 单引号替换为双引号
-    console.log('发送消息', text);
+    message = message.replaceAll("'", '"');  // 单引号替换为双引号
+    console.log('发送消息', message);
     $.ajax({
         type: "POST",
-        url: messages_url,
-        data: JSON.stringify({"text": text, "sender": "user"}), //需要转成JSON字符串
-        dataType: "json",
-        async: false,
-        success: function () {
-            while (true) {
-                if (default_actions.indexOf(action) > -1 && $("#send").attr("disabled") === undefined) {
-                    break;  // 不是默认动作的话一直预测并执行动作
-                }
-                predict();  // 循环的内容需要同步
-            }
-        }
-    });
-}
-
-/*预测下一步动作*/
-function predict() {
-    $.ajax({
-        type: "POST",
-        url: predict_url,
+        url: url,
+        data: JSON.stringify({"sender": sender, "message": message}), //需要转成JSON字符串
         dataType: "json",
         async: false,
         success: function (response) {
-            action = response["scores"][0]["action"];  // 取置信度最高的动作
-            console.log(action);
-            if (default_actions.indexOf(action) > -1) {
-                $("#send").attr("disabled", false);  // 按钮设为可用
+            if (response.length !== 0) {
+                console.log(response);
             }
-            execute();
-        }
-    });
-}
-
-/*执行动作*/
-function execute() {
-    $.ajax({
-        type: "POST",
-        url: execute_url,
-        data: JSON.stringify({"name": action}),
-        dataType: "json",
-        async: false,
-        success: function (response) {
-            var messages = response["messages"];
-            if (messages.length !== 0) {
-                console.log(messages);
-            }
-            for (i in messages) {
-                if ("text" in messages[i]) {
-                    var t = messages[i]["text"];
+            for (i in response) {
+                if ("text" in response[i]) {
+                    var t = response[i]["text"];
                     $("#dialog").append("<p>" + t + "</p>");
                 }
-                if ("image" in messages[i]) {
-                    var image = messages[i]["image"];
+                if ("image" in response[i]) {
+                    var image = response[i]["image"];
                     $("#dialog").append('<a href="' + image + '"><img src="' + image + '" class="img-rounded"></a>');
                 }
-                if ("buttons" in messages[i]) {
-                    var buttons = messages[i]["buttons"];
+                if ("buttons" in response[i]) {
+                    var buttons = response[i]["buttons"];
                     for (j in buttons) {
                         var payload = buttons[j]["payload"];
                         var html = '<button type="submit" class="btn btn-default btn-sm choice" value=\'{0}\'>{1}</button>&nbsp;&nbsp;'.format(payload, buttons[j]["title"]);
@@ -136,12 +75,12 @@ function execute() {
 function choose() {
     $(".choice").on("click", function () {
         var payload = $(this).val();  // 真实数据
-        var text = $(this).text();  // 呈现数据
+        var message = $(this).text();  // 呈现数据
         if (payload === "") {
-            payload = text;  // 真实数据为空时替换成呈现数据
+            payload = message;  // 真实数据为空时替换成呈现数据
         }
         $("#dialog").append("<p>Your input ->  <b>" + payload + "</b></p>");  // 页面添加输入文本
-        $("#text").focus();  // 设置焦点
+        $("#message").focus();  // 设置焦点
         messages(payload);  // 发送消息
     });
 }
