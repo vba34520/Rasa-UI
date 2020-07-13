@@ -66,6 +66,7 @@ function messages(message) {
                     choose();  // 选择事件
                 }
             }
+            $("#send").attr("disabled", false);  // 按钮设为可用
             $("#dialog").get(0).scrollTop = $("#dialog").get(0).scrollHeight; // 自动滚到底
         }
     });
